@@ -51,12 +51,12 @@ contract Registry {
         didToHash[did] = Record(msg.sender, didToHash[did].ddoHash, recoveryAddress);
     }
 
-    function getHash(bytes32 did) public view returns (string memory) {
+    function getRecord(bytes32 did) public view returns (string memory) {
         return didToHash[did].ddoHash;
     }
 
     // TODO remove
-    function getRecoveryAddress(bytes32 _did) public view returns (address){
+    function getRecoveryAddress(bytes32 did) public view returns (address){
         return didToHash[did].recovery;
     }
 
