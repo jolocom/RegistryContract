@@ -46,4 +46,15 @@ describe('Ethereum Resolver', () => {
   it('Should return error in case reading record fails', async () => {
     await expect(ethResolver.resolveDID('invalidInput')).to.be.rejected
   })
-})
+
+  it('Should set the recovery key correctly', async () =>{
+    const ethereumKey = Buffer.from(testData.firstKey, 'hex')
+    const recoveryKey = Buffer.from(testData.secondKey, 'hex')
+    const recoveryAddress = wallet.fromPrivateKey(recoveryKey).getAddress().toString('hex');
+    await ethResolver.setRecoveryKey(
+      ethereumKey,
+      testData.testUserDID,
+      '0x' + recoveryAddress
+      )
+  })
+});
