@@ -55,7 +55,6 @@ export default class EthereumResolver {
 
     const callData = this.indexContract.methods.setRecord(keyHash, newHash)
       .encodeABI();
-    console.log(callData)
 
     return this.sendTransaction(ethereumKey, callData)
   }
@@ -64,8 +63,21 @@ export default class EthereumResolver {
     const didHash = this._stripMethodPrefix(did);
 
     const callData = this.indexContract.methods.setRecovery(didHash, recoveryAddress).encodeABI();
-    console.log(callData)
     return this.sendTransaction(ethereumKey, callData)
+  }
+
+  getRecoveryKey(did: string):Promise<void>{
+
+    return new Promise((resolve, reject) => {
+      const keyHash = this._stripMethodPrefix(did);
+      this.indexContract.methods.getRecoveryAddress(keyHash).call((error, result) => {
+        if (error) {
+          return reject(error)
+        }
+        return resolve(result)
+      })
+    })
+
   }
 
   private _stripMethodPrefix(did: string): string {

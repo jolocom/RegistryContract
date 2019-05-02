@@ -16,17 +16,16 @@ describe('Ethereum Resolver', () => {
 
   it('Should correctly register a user\'s DDO hash', async () => {
     const ethereumKey = Buffer.from(testData.firstKey, 'hex')
-    const hash = await ethResolver.updateDIDRecord(
+    await ethResolver.updateDIDRecord(
       ethereumKey,
       testData.testUserDID,
       testData.mockDDOHash
     )
-
-    expect(await ethResolver.resolveDID(testData.testUserDID))
-      .to.equal(testData.mockDDOHash)
+    const val = await ethResolver.resolveDID(testData.testUserDID);
+    expect(val).to.equal(testData.mockDDOHash)
   })
 
-  it('Should return error in case writting record fails', async () => {
+  it('Should return error in case writing record fails', async () => {
     const ethereumKey = Buffer.from(testData.secondKey, 'hex')
 
     await expect(ethResolver.updateDIDRecord(
@@ -47,14 +46,18 @@ describe('Ethereum Resolver', () => {
     await expect(ethResolver.resolveDID('invalidInput')).to.be.rejected
   })
 
-  it('Should set the recovery key correctly', async () =>{
+  it('Should set the recovery key correctly', async () => {
     const ethereumKey = Buffer.from(testData.firstKey, 'hex')
     const recoveryKey = Buffer.from(testData.secondKey, 'hex')
     const recoveryAddress = wallet.fromPrivateKey(recoveryKey).getAddress().toString('hex');
+
     await ethResolver.setRecoveryKey(
       ethereumKey,
       testData.testUserDID,
-      '0x' + recoveryAddress
-      )
+      recoveryAddress
+    )
+    const recovery = await ethResolver.getRecoveryKey(testData.testUserDID)
+
+    expect(recovery).to.equal('0xc1947e1a6880335477C7dE4FF07D12d359234473')
   })
 });
