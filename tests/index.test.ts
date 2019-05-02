@@ -1,13 +1,12 @@
-import * as chai from 'chai'
-import * as chaiAsPromised from 'chai-as-promised'
-import * as wallet from 'ethereumjs-wallet'
+import mocha  = require('mocha');
+import { expect, use } from 'chai'
+import chaiAsPromised = require('chai-as-promised')
+import wallet = require('ethereumjs-wallet')
 
 import testData from './data/testData'
-
 import EthereumResolver from '../ts/index'
 
-chai.use(chaiAsPromised)
-const expect = chai.expect
+use(chaiAsPromised)
 
 
 describe('Ethereum Resolver', () => {

@@ -1,4 +1,4 @@
-import * as wallet from 'ethereumjs-wallet'
+import wallet = require('ethereumjs-wallet');
 import * as Transaction from 'ethereumjs-tx'
 
 const RegistryContract = require('../build/contracts/Registry.json');

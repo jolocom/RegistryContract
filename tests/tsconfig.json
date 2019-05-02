@@ -1,0 +1,11 @@
+{
+  "version": "2.5",
+  "extends": "../tsconfig",
+
+  "filesGlob": [
+    "./**/*.ts",
+    "!./node_modules/**/*.ts"
+  ],
+  "exclude": [
+  ]
+}

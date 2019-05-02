@@ -5,7 +5,7 @@
   "main": "js/index.js",
   "typings": "js/index",
   "scripts": {
-    "prepare": "tsc -p ./ts",
+    "prepare": "tsc -p .",
     "prepublish": "yarn run prepare",
     "test": "yarn run deploy && mocha tests/*.test.ts -r ts-node/register",
     "deploy": "truffle deploy --reset",
@@ -22,6 +22,9 @@
     "web3": "1.0.0-beta.29"
   },
   "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/chai-as-promised": "^7.1.0",
+    "@types/mocha": "^5.2.6",
     "@types/node": "^9.4.0",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
