@@ -9,7 +9,7 @@
     "prepublish": "yarn run prepare",
     "test": "yarn run deploy && mocha tests/*.test.ts -r ts-node/register",
     "deploy": "truffle deploy --reset",
-    "testrpc": "ganache-cli --account='0xa2985156e3da3046101ae2b26093f647fed9d6ce31ffeb4d975d143ac69e5b46,1000000000000000000000001' --account='0x217bd5bc9087a7349c771bc78da459bf2862c804eabbf3b54f16193c67f9a95d,5000000000000000000000001'"
+    "testrpc": "ganache-cli --account='0xa2985156e3da3046101ae2b26093f647fed9d6ce31ffeb4d975d143ac69e5b46,1000000000000000000000001' --account='0x217bd5bc9087a7349c771bc78da459bf2862c804eabbf3b54f16193c67f9a95d,5000000000000000000000001' --account='0x135e0dc53a8aad4f3629cba43fee0255cad5bc8b05bfeee4b92f2b1c28269154,1000000000000000000000001'"
   },
   "files": [
     "js/",

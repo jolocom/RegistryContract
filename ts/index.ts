@@ -66,6 +66,14 @@ export default class EthereumResolver {
     return this.sendTransaction(ethereumKey, callData)
   }
 
+  changeIdenityOwner(recoveryKey: any, did: string, newOwnerAddress: string, newHash: string): Promise<void> {
+    const didHash = this._stripMethodPrefix(did);
+
+    const callData = this.indexContract.methods.changeOwner(didHash, newOwnerAddress, newHash).encodeABI();
+    return this.sendTransaction(recoveryKey, callData)
+  }
+
+  // TODO test helper method
   getRecoveryKey(did: string):Promise<void>{
 
     return new Promise((resolve, reject) => {

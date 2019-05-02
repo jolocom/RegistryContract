@@ -45,8 +45,11 @@ contract Registry {
         if (emptyTest.length == 0) {
             revert("DID is not registered.");
         }
-        if (emptyTest.length != 0 && didToHash[did].owner != msg.sender) {
+        if (didToHash[did].owner != msg.sender) {
             revert("Invalid DID private key.");
+        }
+        if (didToHash[did].recovery != address(0)){
+            revert("Recovery address is already set");
         }
         didToHash[did] = Record(msg.sender, didToHash[did].ddoHash, recoveryAddress);
     }
