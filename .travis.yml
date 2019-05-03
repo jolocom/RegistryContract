@@ -4,7 +4,7 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
 node_js:
-  - "10.15.1"
+  - "10.15.3"
 install:
   - yarn install
 jobs:
