@@ -5,16 +5,30 @@ import wallet = require('ethereumjs-wallet')
 
 import testData from './data/testData'
 import EthereumResolver from '../ts/index'
+import { TestUtil } from "./utils";
 
 use(chaiAsPromised)
 
 /**
- * The contract state is reset when the testrpc is restarted.
+ * The contract state is reset with every run of the test suite
  * Some tests depend on each other.
  */
 describe('Ethereum Resolver', () => {
-  const rpcEndpoint = 'http://localhost:8545'
-  const ethResolver = new EthereumResolver(testData.contrAddr, rpcEndpoint)
+  let ganacheServer;
+  let ethResolver;
+
+  before(async () => {
+    ganacheServer = TestUtil.startGanache()
+
+    const address = wallet.fromPrivateKey(Buffer.from(testData.firstKey, 'hex')).getAddress().toString('hex');
+    const contractAddress = await TestUtil.deployIdentityContract(address)
+    ethResolver  = new EthereumResolver(contractAddress, TestUtil.ganacheUri)
+
+  })
+
+  after(() => {
+    ganacheServer.close()
+  })
 
   describe('DID Registry', () => {
 
@@ -55,7 +69,6 @@ describe('Ethereum Resolver', () => {
     it('Should return error in case reading record fails', async () => {
       await expect(ethResolver.resolveDID('invalidInput')).to.be.rejected
     })
-
   })
 
   describe('Identity Recovery', () => {

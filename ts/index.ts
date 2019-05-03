@@ -1,39 +1,23 @@
 import wallet = require('ethereumjs-wallet');
 import * as Transaction from 'ethereumjs-tx'
+import Web3 from "web3";
+import { Contract } from "web3/types";
+const Web3Lib = require("web3");
+
 
 const RegistryContract = require('../build/contracts/Registry.json');
-const Web3 = require('web3');
 
-/*
-* Helper class to assist with local deployment for testing purposes
-*/
-export class TestDeployment {
-  public static deployIdentityContract(web3: any, from: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const contract = new web3.eth.Contract(RegistryContract.abi);
-
-      contract.deploy({
-        data: RegistryContract.bytecode
-      }).send({
-        gas: 467000,
-        from
-      }).on('receipt', receipt => {
-        return resolve(receipt.contractAddress)
-      }).on('error', reject)
-    })
-  }
-}
 
 export default class EthereumResolver {
-  private web3: any;
-  private indexContract: any;
+  private web3: Web3;
+  private indexContract: Contract;
   private contractAddress: string;
   private gasLimit = 250000;
   private gasPrice = 20e9;
 
   constructor(address: string, providerUri: string) {
-    const provider = new Web3.providers.HttpProvider(providerUri);
-    this.web3 = new Web3(provider);
+    const provider = new Web3Lib.providers.HttpProvider(providerUri);
+    this.web3 = new Web3Lib(provider);
     this.contractAddress = address;
     this.indexContract = new this.web3.eth.Contract(RegistryContract.abi, address)
   }
@@ -41,16 +25,17 @@ export default class EthereumResolver {
   resolveDID(did: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const keyHash = this._stripMethodPrefix(did);
-      this.indexContract.methods.getRecord(keyHash).call((error, result) => {
-        if (error) {
-          return reject(error)
-        }
-        return resolve(result)
-      })
+      try {
+        this.indexContract.methods.getRecord(keyHash).call()
+          .then(result => resolve(result))
+          .catch(reason => reject(reason))
+      } catch (e) {
+        reject(e)
+      }
     })
   }
 
-  updateDIDRecord(ethereumKey: any, did: string, newHash: string): Promise<void> {
+  updateDIDRecord(ethereumKey: Buffer, did: string, newHash: string): Promise<{}> {
     const keyHash = this._stripMethodPrefix(did);
 
     const callData = this.indexContract.methods.setRecord(keyHash, newHash)
@@ -59,14 +44,14 @@ export default class EthereumResolver {
     return this.sendTransaction(ethereumKey, callData)
   }
 
-  setRecoveryKey(ethereumKey: any, did: string, recoveryAddress: string): Promise<void> {
+  setRecoveryKey(ethereumKey: Buffer, did: string, recoveryAddress: string): Promise<{}> {
     const didHash = this._stripMethodPrefix(did);
 
     const callData = this.indexContract.methods.setRecovery(didHash, recoveryAddress).encodeABI();
     return this.sendTransaction(ethereumKey, callData)
   }
 
-  changeIdenityOwner(recoveryKey: any, did: string, newOwnerAddress: string, newHash: string): Promise<void> {
+  changeIdenityOwner(recoveryKey: Buffer, did: string, newOwnerAddress: string, newHash: string): Promise<{}> {
     const didHash = this._stripMethodPrefix(did);
 
     const callData = this.indexContract.methods.changeOwner(didHash, newOwnerAddress, newHash).encodeABI();
@@ -75,24 +60,15 @@ export default class EthereumResolver {
 
   // TODO test helper method
   getRecoveryKey(did: string):Promise<void>{
-
-    return new Promise((resolve, reject) => {
       const keyHash = this._stripMethodPrefix(did);
-      this.indexContract.methods.getRecoveryAddress(keyHash).call((error, result) => {
-        if (error) {
-          return reject(error)
-        }
-        return resolve(result)
-      })
-    })
-
+      return this.indexContract.methods.getRecoveryAddress(keyHash).call()
   }
 
   private _stripMethodPrefix(did: string): string {
     return `0x${ did.substring(did.lastIndexOf(':') + 1) }`
   }
 
-  private sendTransaction(ethereumKey: any, callData: string): Promise<void> {
+  private sendTransaction(ethereumKey: Buffer, callData: string): Promise<{}> {
     const w = wallet.fromPrivateKey(ethereumKey);
     const address = w.getAddress().toString('hex');
 
