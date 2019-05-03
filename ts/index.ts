@@ -2,9 +2,8 @@ import wallet = require('ethereumjs-wallet');
 import * as Transaction from 'ethereumjs-tx'
 import Web3 from "web3";
 import { Contract } from "web3/types";
+
 const Web3Lib = require("web3");
-
-
 const RegistryContract = require('../build/contracts/Registry.json');
 
 
@@ -59,9 +58,9 @@ export default class EthereumResolver {
   }
 
   // TODO test helper method
-  getRecoveryKey(did: string):Promise<void>{
-      const keyHash = this._stripMethodPrefix(did);
-      return this.indexContract.methods.getRecoveryAddress(keyHash).call()
+  getRecoveryKey(did: string): Promise<void> {
+    const keyHash = this._stripMethodPrefix(did);
+    return this.indexContract.methods.getRecoveryAddress(keyHash).call()
   }
 
   private _stripMethodPrefix(did: string): string {

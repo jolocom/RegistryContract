@@ -7,8 +7,7 @@
   "scripts": {
     "prepare": "tsc -p .",
     "prepublish": "yarn run prepare",
-    "test": "yarn run deploy && mocha tests/*.test.ts -r ts-node/register",
-    "deploy": "truffle deploy --reset"
+    "test": "mocha tests/*.test.ts -r ts-node/register"
   },
   "files": [
     "js/",
@@ -18,7 +17,6 @@
   "dependencies": {
     "ethereumjs-tx": "^1.3.3",
     "ethereumjs-wallet": "^0.6.0",
-    "ganache-core": "^2.5.5",
     "web3": "1.0.0-beta.29"
   },
   "devDependencies": {
@@ -28,7 +26,7 @@
     "@types/node": "^9.4.0",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
-    "ganache-cli": "^6.4.3",
+    "ganache-core": "^2.5.5",
     "mocha": "^5.0.0",
     "truffle": "4.1.14",
     "truffle-hdwallet-provider": "0.0.3",

@@ -36,6 +36,7 @@ export class TestUtil {
     return new Promise((resolve, reject) => {
       const web3 = new Web3(new Web3.providers.HttpProvider(TestUtil.ganacheUri))
       const contract = new web3.eth.Contract(RegistryContract.abi);
+
       contract.deploy({
         data: RegistryContract.bytecode,
         arguments: []
