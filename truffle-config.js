@@ -4,7 +4,7 @@ const mnemonic = ''
 module.exports = {
     networks: {
         rinkeby: {
-            provider: function() {
+            provider: function () {
                 return new HDWalletProvider(mnemonic, "https://rinkeby.infura.io/G58gg0SgiNhbpN1U5ho3")
             },
             network_id: "*"
@@ -13,6 +13,11 @@ module.exports = {
             host: "localhost",
             port: 8545,
             network_id: "*"
+        }
+    },
+    compilers: {
+        solc: {
+            version: "^0.5.1",
         }
     }
 };

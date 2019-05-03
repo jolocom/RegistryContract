@@ -6,8 +6,7 @@
   "typings": "js/index",
   "scripts": {
     "prepare": "tsc -p .",
-    "prepublish": "yarn run prepare",
-    "test": "mocha tests/*.test.ts -r ts-node/register"
+    "test": "truffle compile && mocha tests/*.test.ts -r ts-node/register"
   },
   "files": [
     "js/",
@@ -28,7 +27,7 @@
     "chai-as-promised": "^7.1.1",
     "ganache-core": "^2.5.5",
     "mocha": "^5.0.0",
-    "truffle": "4.1.14",
+    "truffle": "5.0.15",
     "truffle-hdwallet-provider": "0.0.3",
     "ts-node": "^4.1.0",
     "typescript": "^2.6.2"

@@ -1,5 +1,4 @@
 import testData from "./data/testData";
-
 const Web3 = require('web3')
 const ganache = require('ganache-core')
 const RegistryContract = require('../build/contracts/Registry.json');
@@ -33,17 +32,19 @@ export class TestUtil {
   }
 
   public static deployIdentityContract(address: string): Promise<string> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const web3 = new Web3(new Web3.providers.HttpProvider(TestUtil.ganacheUri))
       const contract = new web3.eth.Contract(RegistryContract.abi);
 
-      contract.deploy({
+      const tx = contract.deploy({
         data: RegistryContract.bytecode,
         arguments: []
-      }).send({
-          gas: 1158307,
-          from: address,
-        }).on('receipt', receipt => {
+      })
+      const gas = await tx.estimateGas()
+      tx.send({
+        gas: gas,
+        from: address,
+      }).on('receipt', receipt => {
         return resolve(receipt.contractAddress)
       }).on('error', reject)
     })
