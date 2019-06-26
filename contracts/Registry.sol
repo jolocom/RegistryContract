@@ -15,7 +15,7 @@ contract Registry {
         if (msg.sender != ownerAddress)
             revert("Sender is not authorized.");
         if (didRegistry[did].recovery.length != 0)
-            revert("Recovery is not empty");
+            revert("Recovery can not be changed.");
         _;
     }
 
@@ -27,17 +27,16 @@ contract Registry {
                 revert("Sender is not authorized.");
             }
         }
-        if (msg.sender == recoveryAddress){
+        if (msg.sender == recoveryAddress) {
             didRegistry[did] = Record(owner, "", servicesHash);
         } else {
             didRegistry[did] = Record(owner, didRegistry[did].recovery, servicesHash);
         }
     }
 
-    function setRecovery(bytes32 did, bytes memory recovery) public onlyOwnerWithoutRecovery(did) {// TODO validate that recovery is empty
-        // Record storage record = didRegistry[did];
-        // record.recovery = recovery;
-        didRegistry[did] = Record(didRegistry[did].owner, recovery, didRegistry[did].servicesHash);
+    function setRecovery(bytes32 did, bytes memory recovery) public onlyOwnerWithoutRecovery(did) {
+        Record storage record = didRegistry[did];
+        record.recovery = recovery;
     }
 
     function getIdentity(bytes32 did) public view returns (bytes memory, bytes memory, string memory) {

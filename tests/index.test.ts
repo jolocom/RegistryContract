@@ -34,36 +34,12 @@ describe('Ethereum Resolver', () => {
 
     it('Should correctly register a user\'s DDO hash', async () => {
       const ethereumKey = Buffer.from(testData.firstKey.private, 'hex')
-      await ethResolver.updateIdentity(
+      await expect(ethResolver.updateIdentity(
         ethereumKey,
         testData.testUserDID,
         "0x" + testData.firstKey.public,
         "",
-      )
-
-      const val = await ethResolver.resolveDID(testData.testUserDID);
-
-      expect(val).to.deep.equal({
-        0: "0x" + testData.firstKey.public,
-        1: null,
-        2: ""
-      })
-    })
-
-    /**
-     * depends on the test DID registered by `testData.firstKey`.
-     */
-    it('Should return error in case writing record fails', async () => {
-      const ethereumKey = Buffer.from(testData.secondKey.private, 'hex')
-
-      await expect(ethResolver.updateIdentity(
-        ethereumKey,
-        testData.testUserDID,
-        "0x" + testData.secondKey.public,
-        "",
-      )).to.be.rejectedWith(
-        'Sender is not authorized.'
-      )
+      )).to.be.fulfilled
     })
 
     /**
@@ -101,28 +77,44 @@ describe('Ethereum Resolver', () => {
 
     })
 
+    /**
+     * depends on the test DID registered by `testData.firstKey`.
+     */
+    it('Should not update record with another key', async () => {
+      const secondEthereumKey = Buffer.from(testData.secondKey.private, 'hex')
+
+      await expect(ethResolver.updateIdentity(
+        secondEthereumKey,
+        testData.testUserDID,
+        "0x" + testData.secondKey.public,
+        "",
+      )).to.be.rejectedWith(
+        'Sender is not authorized.'
+      )
+    })
+
     it('Should return error in case reading record fails', async () => {
       await expect(ethResolver.resolveDID('invalidInput')).to.be.rejected
     })
   })
 
   describe('Identity Recovery', () => {
-    const ethereumKey = Buffer.from(testData.firstKey.private, 'hex')
+    const firstKey = Buffer.from(testData.firstKey.private, 'hex')
     const secondKey = Buffer.from(testData.secondKey.private, 'hex')
     const recoveryKey = Buffer.from(testData.recoveryKey.private, 'hex')
 
-    it('Should not set recovery key with wrong key', async () => {
-      await expect(ethResolver.setRecoveryKey(
-        secondKey,
+    before(async () => {
+      await ethResolver.updateIdentity(
+        firstKey,
         testData.testUserDID,
-        "0x" + testData.recoveryKey.public
-      ))
-        .to.be.rejectedWith('Sender is not authorized.')
+        "0x" + testData.firstKey.public,
+        "",
+      )
     })
 
     it('Should set the recovery key correctly', async () => {
       await ethResolver.setRecoveryKey(
-        ethereumKey,
+        firstKey,
         testData.testUserDID,
         "0x" + testData.recoveryKey.public)
       const recovery = await ethResolver.resolveDID(testData.testUserDID)
@@ -134,32 +126,40 @@ describe('Ethereum Resolver', () => {
      */
     it('Should return error if recovery is changed', async () => {
       await expect(ethResolver.setRecoveryKey(
-        ethereumKey,
+        firstKey,
         testData.testUserDID,
         "0x" + testData.secondKey.public
       ))
-        .to.be.rejectedWith('Recovery is not empty')
+        .to.be.rejectedWith('Recovery can not be changed.')
     })
 
+    it('Should change identity owner with recovery key', async () => {
+      await ethResolver.updateIdentity(
+        recoveryKey,
+        testData.testUserDID,
+        "0x" + testData.secondKey.public,
+        testData.mockIPFSHash,
+      )
+      const hash = await ethResolver.resolveDID(testData.testUserDID)
+      expect(hash[0]).to.equal("0x" + testData.secondKey.public)
+      expect(hash[1]).to.equal(null)
+    })
 
-    it('Should return error if did is not registered', async () => {
+    it('Should return error if DID is not registered', async () => {
       await expect(ethResolver.setRecoveryKey(
-        ethereumKey,
+        firstKey,
         testData.wrongDID,
         '0x' + testData.recoveryKey.public
       )).to.be.rejectedWith('Sender is not authorized.')
     })
 
-    it('Should change identity owner with recovery key', async () => {
-
-      await ethResolver.updateIdentity(
-        recoveryKey,
+    it('Should not set recovery key with wrong key', async () => {
+      await expect(ethResolver.setRecoveryKey(
+        secondKey,
         testData.testUserDID,
-        "0x"+ testData.secondKey.public,
-        testData.mockIPFSHash,
-      )
-      const hash = await ethResolver.resolveDID(testData.testUserDID)
-      expect(hash[0]).to.equal("0x" + testData.secondKey.public)
+        "0x" + testData.recoveryKey.public
+      ))
+        .to.be.rejectedWith('Sender is not authorized.')
     })
   })
 });
