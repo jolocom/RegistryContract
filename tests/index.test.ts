@@ -133,6 +133,15 @@ describe('Ethereum Resolver', () => {
         .to.be.rejectedWith('Recovery can not be changed.')
     })
 
+    it('Should not set recovery key with wrong key', async () => {
+      await expect(ethResolver.setRecoveryKey(
+        secondKey,
+        testData.testUserDID,
+        "0x" + testData.recoveryKey.public
+      ))
+        .to.be.rejectedWith('Sender is not authorized.')
+    })
+
     it('Should change identity owner with recovery key', async () => {
       await ethResolver.updateIdentity(
         recoveryKey,
@@ -151,15 +160,6 @@ describe('Ethereum Resolver', () => {
         testData.wrongDID,
         '0x' + testData.recoveryKey.public
       )).to.be.rejectedWith('Sender is not authorized.')
-    })
-
-    it('Should not set recovery key with wrong key', async () => {
-      await expect(ethResolver.setRecoveryKey(
-        secondKey,
-        testData.testUserDID,
-        "0x" + testData.recoveryKey.public
-      ))
-        .to.be.rejectedWith('Sender is not authorized.')
     })
   })
 });
