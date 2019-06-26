@@ -3,69 +3,51 @@ pragma solidity ^0.5.1;
 contract Registry {
 
     struct Record {
-        address owner;
-        string ddoHash;
-        address recovery;
+        bytes owner;
+        bytes recovery;
+        string servicesHash;
     }
 
-    mapping (bytes32 => Record) private didToHash;
+    mapping(bytes32 => Record) private didRegistry;
 
-    address private owner;
-
-    constructor() public {
-        owner = msg.sender;
+    modifier onlyOwnerWithoutRecovery(bytes32 did) {
+        address ownerAddress = pubKeyToAddress(didRegistry[did].owner);
+        if (msg.sender != ownerAddress)
+            revert("Sender is not authorized.");
+        if (didRegistry[did].recovery.length != 0)
+            revert("Recovery is not empty");
+        _;
     }
 
-    function setRecord(bytes32 did, string memory newHash) public {
-        bytes memory emptyTest = bytes(didToHash[did].ddoHash);
-        if (emptyTest.length != 0 && didToHash[did].owner != msg.sender) {
-            revert("DID registration failed. Invalid DID private key.");
+    function setIdentity(bytes32 did, bytes memory owner, string memory servicesHash) public {
+        address ownerAddress = pubKeyToAddress(didRegistry[did].owner);
+        address recoveryAddress = pubKeyToAddress(didRegistry[did].recovery);
+        if (ownerAddress != address(0)) {
+            if (msg.sender != recoveryAddress && msg.sender != ownerAddress) {
+                revert("Sender is not authorized.");
+            }
         }
-        address recovery = address(0);
-        if(emptyTest.length != 0){
-            recovery = didToHash[did].recovery;
+        if (msg.sender == recoveryAddress){
+            didRegistry[did] = Record(owner, "", servicesHash);
+        } else {
+            didRegistry[did] = Record(owner, didRegistry[did].recovery, servicesHash);
         }
-
-        didToHash[did] = Record(msg.sender, newHash, recovery);
     }
 
-    function changeOwner(bytes32 did, address newOwner, string memory newHash) public {
-        if (bytes(didToHash[did].ddoHash).length == 0){
-            revert("DID is not registered");
-        }
-        if (didToHash[did].recovery != msg.sender){
-            revert("Invalid recovery private key");
-        }
-
-        didToHash[did] = Record(newOwner, newHash, address(0));
+    function setRecovery(bytes32 did, bytes memory recovery) public onlyOwnerWithoutRecovery(did) {// TODO validate that recovery is empty
+        // Record storage record = didRegistry[did];
+        // record.recovery = recovery;
+        didRegistry[did] = Record(didRegistry[did].owner, recovery, didRegistry[did].servicesHash);
     }
 
-    function setRecovery(bytes32 did, address recoveryAddress) public {
-        bytes memory emptyTest = bytes(didToHash[did].ddoHash);
-        if (emptyTest.length == 0) {
-            revert("DID is not registered.");
-        }
-        if (didToHash[did].owner != msg.sender) {
-            revert("Invalid DID private key.");
-        }
-        if (didToHash[did].recovery != address(0)){
-            revert("Recovery address is already set");
-        }
-        didToHash[did] = Record(msg.sender, didToHash[did].ddoHash, recoveryAddress);
+    function getIdentity(bytes32 did) public view returns (bytes memory, bytes memory, string memory) {
+        return (didRegistry[did].owner, didRegistry[did].recovery, didRegistry[did].servicesHash);
     }
 
-    function getRecord(bytes32 did) public view returns (string memory) {
-        return didToHash[did].ddoHash;
-    }
-
-    // TODO remove
-    function getRecoveryAddress(bytes32 did) public view returns (address){
-        return didToHash[did].recovery;
-    }
-
-    // TODO remove
-    function getOwner(bytes32 did) public view returns(address){
-        return didToHash[did].owner;
+    function pubKeyToAddress(bytes memory publicKey) internal pure returns (address) {
+        if (publicKey.length == 0)
+            return address(0);
+        return address(bytes20(uint160(uint256(keccak256(publicKey)))));
     }
 
 }

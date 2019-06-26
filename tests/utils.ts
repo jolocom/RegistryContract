@@ -13,15 +13,15 @@ export class TestUtil {
     const server = ganache.server({
       "accounts": [
         {
-          secretKey: '0x' + testData.firstKey,
+          secretKey: '0x' + testData.firstKey.private,
           balance: 1e+24,
         },
         {
-          secretKey: '0x' + testData.secondKey,
+          secretKey: '0x' + testData.secondKey.private,
           balance: 1e+24,
         },
         {
-          secretKey: '0x' + testData.recoveryKey,
+          secretKey: '0x' + testData.recoveryKey.private,
           balance: 1e+24,
         },
 

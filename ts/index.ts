@@ -9,8 +9,8 @@ const RegistryContract = require('../build/contracts/Registry.json');
 
 export default class EthereumResolver {
   private web3: Web3;
-  private indexContract: Contract;
-  private contractAddress: string;
+  private contract: Contract;
+  private readonly contractAddress: string;
   private gasLimit = 250000;
   private gasPrice = 20e9;
 
@@ -18,14 +18,15 @@ export default class EthereumResolver {
     const provider = new Web3Lib.providers.HttpProvider(providerUri);
     this.web3 = new Web3Lib(provider);
     this.contractAddress = address;
-    this.indexContract = new this.web3.eth.Contract(RegistryContract.abi, address)
+    this.contract = new this.web3.eth.Contract(RegistryContract.abi, address)
   }
 
   resolveDID(did: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      const keyHash = this._stripMethodPrefix(did);
+      const idString = this._stripMethodPrefix(did);
+
       try {
-        this.indexContract.methods.getRecord(keyHash).call()
+        this.contract.methods.getIdentity(idString).call()
           .then(result => resolve(result))
           .catch(reason => reject(reason))
       } catch (e) {
@@ -34,33 +35,18 @@ export default class EthereumResolver {
     })
   }
 
-  updateDIDRecord(ethereumKey: Buffer, did: string, newHash: string): Promise<{}> {
-    const keyHash = this._stripMethodPrefix(did);
-
-    const callData = this.indexContract.methods.setRecord(keyHash, newHash)
+  updateIdentity(ethereumKey: Buffer, did: string, owner: string, servicesHash: string): Promise<{}> {
+    const idString = this._stripMethodPrefix(did);
+    const callData = this.contract.methods.setIdentity(idString, owner, servicesHash)
       .encodeABI();
 
     return this.sendTransaction(ethereumKey, callData)
   }
 
-  setRecoveryKey(ethereumKey: Buffer, did: string, recoveryAddress: string): Promise<{}> {
+  setRecoveryKey(ethereumKey: Buffer, did: string, recovery: string): Promise<{}> {
     const didHash = this._stripMethodPrefix(did);
-
-    const callData = this.indexContract.methods.setRecovery(didHash, recoveryAddress).encodeABI();
+    const callData = this.contract.methods.setRecovery(didHash, recovery).encodeABI();
     return this.sendTransaction(ethereumKey, callData)
-  }
-
-  changeIdenityOwner(recoveryKey: Buffer, did: string, newOwnerAddress: string, newHash: string): Promise<{}> {
-    const didHash = this._stripMethodPrefix(did);
-
-    const callData = this.indexContract.methods.changeOwner(didHash, newOwnerAddress, newHash).encodeABI();
-    return this.sendTransaction(recoveryKey, callData)
-  }
-
-  // TODO test helper method
-  getRecoveryKey(did: string): Promise<void> {
-    const keyHash = this._stripMethodPrefix(did);
-    return this.indexContract.methods.getRecoveryAddress(keyHash).call()
   }
 
   private _stripMethodPrefix(did: string): string {
@@ -86,6 +72,7 @@ export default class EthereumResolver {
       return new Promise((resolve, reject) => {
         this.web3.eth.sendSignedTransaction(`0x${ serializedTx.toString('hex') }`)
           .on('confirmation', () => resolve())
+          .on('receipt', r => console.log("gas used: ", r.gasUsed))
           .on('error', (err) => reject(err))
       })
     })
