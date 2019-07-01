@@ -1,13 +1,13 @@
+require("dotenv").config()
 const HDWalletProvider = require("truffle-hdwallet-provider")
-const mnemonic = ''
 
 module.exports = {
     networks: {
         rinkeby: {
-            provider: function () {
-                return new HDWalletProvider(mnemonic, "https://rinkeby.infura.io/G58gg0SgiNhbpN1U5ho3")
+            provider: () => {
+                return new HDWalletProvider(process.env.MNEMONIC, `https://rinkeby.infura.io/v3/${process.env.PROJECT_ID}`)
             },
-            network_id: "*"
+            network_id: 4
         },
         development: {
             host: "localhost",

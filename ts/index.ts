@@ -1,22 +1,19 @@
 import wallet = require('ethereumjs-wallet');
 import * as Transaction from 'ethereumjs-tx'
-import Web3 from "web3";
-import { Contract } from "web3/types";
 
-const Web3Lib = require("web3");
+const Web3 = require("web3");
 const RegistryContract = require('../build/contracts/Registry.json');
 
 
 export default class EthereumResolver {
-  private web3: Web3;
-  private contract: Contract;
+  private web3;
+  private contract;
   private readonly contractAddress: string;
   private gasLimit = 250000;
   private gasPrice = 20e9;
 
   constructor(address: string, providerUri: string) {
-    const provider = new Web3Lib.providers.HttpProvider(providerUri);
-    this.web3 = new Web3Lib(provider);
+    this.web3 = new Web3(providerUri);
     this.contractAddress = address;
     this.contract = new this.web3.eth.Contract(RegistryContract.abi, address)
   }

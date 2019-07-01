@@ -74,7 +74,6 @@ describe('Ethereum Resolver', () => {
         1: null,
         2: testData.mockIPFSHash
       })
-
     })
 
     /**
@@ -94,7 +93,7 @@ describe('Ethereum Resolver', () => {
     })
 
     it('Should return error in case reading record fails', async () => {
-      await expect(ethResolver.resolveDID('invalidInput')).to.be.rejected
+      await expect(ethResolver.resolveDID('invalidInput')).to.be.rejectedWith('invalid bytes32 value')
     })
   })
 
