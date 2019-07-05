@@ -1,6 +1,10 @@
 pragma solidity ^0.5.1;
 
 contract Registry {
+    event Updated (
+        bytes32 did,
+        uint timestamp
+    );
 
     struct Record {
         bytes owner;
@@ -22,6 +26,7 @@ contract Registry {
     function setIdentity(bytes32 did, bytes memory owner, string memory servicesHash) public {
         address ownerAddress = pubKeyToAddress(didRegistry[did].owner);
         address recoveryAddress = pubKeyToAddress(didRegistry[did].recovery);
+        emit Updated(did, now);
         if (ownerAddress != address(0)) {
             if (msg.sender != recoveryAddress && msg.sender != ownerAddress) {
                 revert("Sender is not authorized.");
@@ -46,6 +51,7 @@ contract Registry {
     function pubKeyToAddress(bytes memory publicKey) internal pure returns (address) {
         if (publicKey.length == 0)
             return address(0);
+        require (publicKey.length == 64, "public key must have 64 bytes");
         return address(bytes20(uint160(uint256(keccak256(publicKey)))));
     }
 

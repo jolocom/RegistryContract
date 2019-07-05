@@ -1,7 +1,6 @@
 import mocha = require('mocha');
 import { expect, use } from 'chai'
 import chaiAsPromised = require('chai-as-promised')
-import wallet = require('ethereumjs-wallet')
 
 import testData from './data/testData'
 import EthereumResolver from '../ts/index'
@@ -19,23 +18,20 @@ describe('Ethereum Resolver', () => {
 
   before(async () => {
     ganacheServer = TestUtil.startGanache()
-
-    const address = wallet.fromPrivateKey(Buffer.from(testData.firstKey.private, 'hex')).getAddress().toString('hex');
-    const contractAddress = await TestUtil.deployIdentityContract(address)
-    ethResolver = new EthereumResolver(contractAddress, TestUtil.ganacheUri)
-
+    const contractAddress = await TestUtil.deployIdentityContract()
+    ethResolver = new EthereumResolver(contractAddress, ganacheServer.provider)
   })
 
-  after(() => {
+  after(async () => {
     ganacheServer.close()
   })
 
   describe('DID Registry', () => {
+    const firstKey = Buffer.from(testData.firstKey.private, 'hex')
 
-    it('Should correctly register a user\'s DDO hash', async () => {
-      const ethereumKey = Buffer.from(testData.firstKey.private, 'hex')
+    it('Should correctly register a user\'s identity', async () => {
       await expect(ethResolver.updateIdentity(
-        ethereumKey,
+        firstKey,
         testData.testUserDID,
         "0x" + testData.firstKey.public,
         "",
@@ -48,9 +44,9 @@ describe('Ethereum Resolver', () => {
     it('Should correctly query contract for the user\'s data', async () => {
       const hash = await ethResolver.resolveDID(testData.testUserDID)
       expect(hash).to.deep.equal({
-        0: "0x" + testData.firstKey.public,
-        1: null,
-        2: ""
+        owner: "0x" + testData.firstKey.public,
+        recovery: null,
+        serviceHash: ""
       })
     })
 
@@ -58,28 +54,26 @@ describe('Ethereum Resolver', () => {
      * depends on registered test DID
      */
     it('Should update the user\'s data', async () => {
-      const ethereumKey = Buffer.from(testData.firstKey.private, 'hex')
-
       await ethResolver.updateIdentity(
-        ethereumKey,
+        firstKey,
         testData.testUserDID,
         "0x" + testData.firstKey.public,
-        testData.mockIPFSHash
+        testData.mockIPFSHash,
       )
 
       const val = await ethResolver.resolveDID(testData.testUserDID);
 
       expect(val).to.deep.equal({
-        0: "0x" + testData.firstKey.public,
-        1: null,
-        2: testData.mockIPFSHash
+        owner: "0x" + testData.firstKey.public,
+        recovery: null,
+        serviceHash: testData.mockIPFSHash
       })
     })
 
     /**
      * depends on the test DID registered by `testData.firstKey`.
      */
-    it('Should not update record with another key', async () => {
+    it('Should not update registry entry with another key', async () => {
       const secondEthereumKey = Buffer.from(testData.secondKey.private, 'hex')
 
       await expect(ethResolver.updateIdentity(
@@ -93,7 +87,7 @@ describe('Ethereum Resolver', () => {
     })
 
     it('Should return error in case reading record fails', async () => {
-      await expect(ethResolver.resolveDID('invalidInput')).to.be.rejectedWith('invalid bytes32 value')
+      await expect(ethResolver.resolveDID('invalidInput')).to.be.rejected
     })
   })
 
@@ -116,8 +110,8 @@ describe('Ethereum Resolver', () => {
         firstKey,
         testData.testUserDID,
         "0x" + testData.recoveryKey.public)
-      const recovery = await ethResolver.resolveDID(testData.testUserDID)
-      expect(recovery[1]).to.equal('0x' + testData.recoveryKey.public)
+      const { recovery } = await ethResolver.resolveDID(testData.testUserDID)
+      expect(recovery).to.equal('0x' + testData.recoveryKey.public)
     })
 
     /**
@@ -148,9 +142,9 @@ describe('Ethereum Resolver', () => {
         "0x" + testData.secondKey.public,
         testData.mockIPFSHash,
       )
-      const hash = await ethResolver.resolveDID(testData.testUserDID)
-      expect(hash[0]).to.equal("0x" + testData.secondKey.public)
-      expect(hash[1]).to.equal(null)
+      const { owner, recovery } = await ethResolver.resolveDID(testData.testUserDID)
+      expect(owner).to.equal("0x" + testData.secondKey.public)
+      expect(recovery).to.equal(null)
     })
 
     it('Should return error if DID is not registered', async () => {
@@ -160,5 +154,14 @@ describe('Ethereum Resolver', () => {
         '0x' + testData.recoveryKey.public
       )).to.be.rejectedWith('Sender is not authorized.')
     })
+
+    /**
+     * Depends on several updates of the userDID registry entry
+     */
+    it('should find updated and created', async () => {
+      const updated = await ethResolver.getUpdated(testData.testUserDID)
+      const created = await ethResolver.getCreated(testData.testUserDID)
+      expect(updated.getMilliseconds() > created.getMilliseconds()).to.be.true
+    });
   })
 });
