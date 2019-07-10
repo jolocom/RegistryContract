@@ -17,15 +17,11 @@ export default class EthereumResolver {
   private web3contract;
 
   constructor(contractAddress: string, provider: string | Web3Provider) {
-    const filter = {
-      address: contractAddress
-    }
     if (typeof provider == 'string')
       this.provider = new ethers.providers.JsonRpcProvider(provider)
     else
       this.provider = new ethers.providers.Web3Provider(provider)
 
-    // @ts-ignore
     const web3 = new Web3(provider)
     this.web3contract = new web3.eth.Contract(RegistryContract.abi, contractAddress)
 
@@ -40,11 +36,12 @@ export default class EthereumResolver {
     }
   }
 
-  async updateIdentity(ethereumKey: Buffer, did: string, owner: string, servicesHash: string): Promise<void> {
+  async updateIdentity(ethereumKey: Buffer, did: string, owner: string, servicesHash: string): Promise<Date> {
     console.log('\nUpdate Identity')
     const idString = this._stripMethodPrefix(did);
     let tx = await this.getSigner(ethereumKey).setIdentity(idString, owner, servicesHash)
     await tx.wait()
+    return this.getUpdated(did)
   }
 
   async setRecoveryKey(ethereumKey: Buffer, did: string, recovery: string): Promise<void> {
@@ -56,12 +53,17 @@ export default class EthereumResolver {
 
   async getUpdated(did): Promise<Date> {
     const updates = await this.getUpdatedEvents(did)
-    return new Date(updates[updates.length - 1])
+    return updates ? new Date(updates[updates.length - 1]) : undefined
+  }
+
+  async getUpdatedCount(did): Promise<number> {
+    const updates = await this.getUpdatedEvents(did)
+    return updates.length
   }
 
   async getCreated(did): Promise<Date> {
     const updates = await this.getUpdatedEvents(did)
-    return new Date(updates[0])
+    return updates ? new Date(updates[0]): undefined
   }
 
   private async getUpdatedEvents(did): Promise<number[]> {

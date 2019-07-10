@@ -154,14 +154,25 @@ describe('Ethereum Resolver', () => {
         '0x' + testData.recoveryKey.public
       )).to.be.rejectedWith('Sender is not authorized.')
     })
-
-    /**
-     * Depends on several updates of the userDID registry entry
-     */
-    it('should find updated and created', async () => {
-      const updated = await ethResolver.getUpdated(testData.testUserDID)
-      const created = await ethResolver.getCreated(testData.testUserDID)
-      expect(updated.getMilliseconds() > created.getMilliseconds()).to.be.true
-    });
   })
+
+  describe('Dates', () => {
+      /**
+       * Depends on several updates of the userDID registry entry
+       */
+      it('should find updated and created', async () => {
+        const updated = await ethResolver.getUpdated(testData.testUserDID)
+        const created = await ethResolver.getCreated(testData.testUserDID)
+        expect(updated.getMilliseconds() > created.getMilliseconds()).to.be.true
+      });
+
+      /**
+       * Depends on several updates of the userDID registry entry
+       */
+      it('should get updated count', async () => {
+        const updatedCount = await ethResolver.getUpdatedCount(testData.testUserDID)
+        expect(updatedCount).to.eq(4)
+      });
+    }
+  )
 });
