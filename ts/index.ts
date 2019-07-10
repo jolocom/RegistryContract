@@ -68,11 +68,14 @@ export default class EthereumResolver {
 
   private async getUpdatedEvents(did): Promise<number[]> {
     const idString = this._stripMethodPrefix(did);
-    return (await this.web3contract.getPastEvents('Updated', {
+    let data = (await this.web3contract.getPastEvents('Updated', {
       filter: { did: idString },
       fromBlock: 0,
       toBlock: 'latest',
-    })).map(e => e.returnValues.timestamp.toNumber())
+    }))
+    // web3 filter is not working for some reason ...
+    data = data.filter(d => d.returnValues.did == idString)
+    return data.map(e => e.returnValues.timestamp.toNumber())
   }
 
 

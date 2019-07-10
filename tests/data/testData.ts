@@ -19,6 +19,7 @@ export default {
   },
   mockIPFSHash: 'Qmaisz6NMhDB51cCvNWa1GMS7LU1pAxdF4Ld6Ft9kZEP2a',
   testUserDID:'did:jolo:bf8095f75ec116362eb31d5e68736be6688f82db616d1dd7df5e9f99047347b2',
+  secondUserDID:'did:jolo:ec116362eb3bf8095f751d5e68736be6688f827347b2db616d1dd7df5e9f9904',
   wrongDID:'did:jolo:a634484858571199b681f6dfdd9ecd2f01df5b38f8379b3aaa89436c61fd1912',
   contrAddr: '0xc4b48901af7891d83ce83877e1f8fb4c81a94907',
 }

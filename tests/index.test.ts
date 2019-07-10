@@ -173,6 +173,22 @@ describe('Ethereum Resolver', () => {
         const updatedCount = await ethResolver.getUpdatedCount(testData.testUserDID)
         expect(updatedCount).to.eq(4)
       });
+
+      /**
+       * Depends on several updates of the userDID registry entry
+       */
+      it('should filter for correct DID', async () => {
+        await ethResolver.updateIdentity(
+          Buffer.from(testData.secondKey.private, 'hex'),
+          testData.secondUserDID,
+          '0x' + testData.secondKey.public,
+          ""
+        )
+        const updatedCount1 = await ethResolver.getUpdatedCount(testData.testUserDID)
+        const updatedCount2 = await ethResolver.getUpdatedCount(testData.secondUserDID)
+        expect(updatedCount2).to.eq(1)
+        expect(updatedCount1).to.eq(4)
+      });
     }
   )
 });
