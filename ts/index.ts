@@ -1,85 +1,90 @@
-import * as wallet from 'ethereumjs-wallet'
-import * as Transaction from 'ethereumjs-tx'
+import { ethers } from 'ethers'
+import { Web3Provider } from "ethers/providers";
 
-const RegistryContract = require('../build/contracts/Registry.json')
-const Web3 = require('web3')
+const Web3 = require('web3');
 
-/*
-* Helper class to assist with local deployment for testing purposes
-*/
-export class TestDeployment {
-  public static deployIdentityContract(web3: any, from: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const contract = new web3.eth.Contract(RegistryContract.abi)
+const RegistryContract = require('../build/contracts/Registry.json');
 
-      contract.deploy({
-        data: RegistryContract.bytecode
-      }).send({
-        gas: 467000,
-        from
-      }).on('receipt', receipt => {
-        return resolve(receipt.contractAddress)
-      }).on('error', reject)
-    })
-  }
+export interface IdentityData {
+  owner: string,
+  recovery: string,
+  serviceHash: string,
 }
 
-export default class EthereumResolver{
-  private web3: any
-  private indexContract: any
-  private contractAddress: string
+export default class EthereumResolver {
+  private readonly provider;
+  private contract;
+  private web3contract;
 
-  constructor(address: string, providerUri: string) {
-    const provider =  new Web3.providers.HttpProvider(providerUri)
-    this.web3 = new Web3(provider)
-    this.contractAddress = address
-    this.indexContract = new this.web3.eth.Contract(RegistryContract.abi, address)
-  }
-  
-  resolveDID(did: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const keyHash = this._stripMethodPrefix(did)
-      this.indexContract.methods.getRecord(keyHash).call((error, result) => {
-        if (error) {
-          return reject(error)
-        }
-        return resolve(result)
-      })
-    })
+  constructor(contractAddress: string, provider: string | Web3Provider) {
+    if (typeof provider == 'string')
+      this.provider = new ethers.providers.JsonRpcProvider(provider)
+    else
+      this.provider = new ethers.providers.Web3Provider(provider)
+
+    const web3 = new Web3(provider)
+    this.web3contract = new web3.eth.Contract(RegistryContract.abi, contractAddress)
+
+    this.contract = new ethers.Contract(contractAddress, RegistryContract.abi, this.provider)
   }
 
-  updateDIDRecord(ethereumKey: any, did: string, newHash: string): Promise<string> {
-    const gasLimit = 250000
-    const gasPrice = 20e9
-
-    const w = wallet.fromPrivateKey(ethereumKey)
-    const address = w.getAddress().toString('hex')
-    const keyHash = this._stripMethodPrefix(did)
-
-    const callData = this.indexContract.methods.setRecord(keyHash, newHash)
-      .encodeABI()
-
-    return this.web3.eth.getTransactionCount(address).then(nonce => {
-      const tx = new Transaction({
-        nonce: nonce,
-        gasLimit,
-        gasPrice,
-        data: callData,
-        to: this.contractAddress
-      })
-
-      tx.sign(ethereumKey)
-      const serializedTx = tx.serialize()
-
-      return new Promise((resolve, reject) => {
-        this.web3.eth.sendSignedTransaction(`0x${serializedTx.toString('hex')}`)
-        .on('confirmation', () => resolve())
-        .on('error', (err) => reject(err))
-      })
-    })
+  async resolveDID(did: string): Promise<IdentityData> {
+    const idString = this._stripMethodPrefix(did);
+    const result = await this.contract.getIdentity(idString)
+    return {
+      owner: result[0], recovery: result[1] == '0x' ? null : result[1], serviceHash: result[2]
+    }
   }
+
+  async updateIdentity(ethereumKey: Buffer, did: string, owner: string, servicesHash: string): Promise<Date> {
+    console.log('\nUpdate Identity')
+    const idString = this._stripMethodPrefix(did);
+    let tx = await this.getSigner(ethereumKey).setIdentity(idString, owner, servicesHash)
+    await tx.wait()
+    return this.getUpdated(did)
+  }
+
+  async setRecoveryKey(ethereumKey: Buffer, did: string, recovery: string): Promise<void> {
+    console.log('\nSet recovery')
+    const idString = this._stripMethodPrefix(did);
+    let tx = await this.getSigner(ethereumKey).setRecovery(idString, recovery)
+    await tx.wait()
+  }
+
+  async getUpdated(did): Promise<Date> {
+    const updates = await this.getUpdatedEvents(did)
+    return updates ? new Date(updates[updates.length - 1]) : undefined
+  }
+
+  async getUpdatedCount(did): Promise<number> {
+    const updates = await this.getUpdatedEvents(did)
+    return updates.length
+  }
+
+  async getCreated(did): Promise<Date> {
+    const updates = await this.getUpdatedEvents(did)
+    return updates ? new Date(updates[0]): undefined
+  }
+
+  private async getUpdatedEvents(did): Promise<number[]> {
+    const idString = this._stripMethodPrefix(did);
+    let data = (await this.web3contract.getPastEvents('Updated', {
+      filter: { did: idString },
+      fromBlock: 0,
+      toBlock: 'latest',
+    }))
+    // web3 filter is not working for some reason ...
+    data = data.filter(d => d.returnValues.did == idString)
+    return data.map(e => e.returnValues.timestamp.toNumber())
+  }
+
 
   private _stripMethodPrefix(did: string): string {
-    return `0x${did.substring(did.lastIndexOf(':') + 1)}`
+    return `0x${ did.substring(did.lastIndexOf(':') + 1) }`
+  }
+
+  private getSigner(privateKey: Buffer) {
+    const wallet = new ethers.Wallet(privateKey, this.provider)
+    return this.contract.connect(wallet)
   }
 }

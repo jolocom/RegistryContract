@@ -12,10 +12,11 @@
     "declaration": true,
     "sourceMap": true,
     "suppressImplicitAnyIndexErrors": true,
-    "outDir": "../js"
+    "outDir": "./js"
   },
-  "filesGlob": [
-    "./**/*.ts",
-    "!./node_modules/**/*.ts"
+  "exclude": [
+    "node_modules",
+    "tests",
+    "js"
   ]
 }

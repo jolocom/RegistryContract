@@ -1,0 +1,14 @@
+language: node_js
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+node_js:
+  - "10.15.3"
+install:
+  - yarn install
+jobs:
+  include:
+    - stage: 'Tests'
+      name: 'Unit Tests'
+      script: yarn test
